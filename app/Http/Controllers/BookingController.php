@@ -183,4 +183,14 @@ class BookingController extends Controller
             'message' => 'Van is available for the selected dates.'
         ]);
     }
+
+    public function markAsRead(Booking $booking)
+{
+    $booking->update(['is_viewed_by_admin' => true]);
+
+    return response()->json(['success' => true]);
+}
+
+
+
 }

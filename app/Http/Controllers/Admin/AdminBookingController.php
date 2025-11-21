@@ -13,25 +13,27 @@ class AdminBookingController extends Controller
 {
     // Show all bookings with search + pagination
     public function index(Request $request)
-    {
-        $query = Booking::with(['user','van'])->orderBy('created_at','desc');
+{
+    $query = Booking::with(['user','van'])->orderBy('created_at','desc');
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('user', function($q) use ($search){
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            })->orWhereHas('van', function($q) use ($search){
-                $q->where('name', 'like', "%{$search}%");
-            })->orWhere('start_date', 'like', "%{$search}%");
-        }
-
-        $bookings = $query->paginate(10);
-
-        return view('admin.bookings.index', compact('bookings'));
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->whereHas('user', function($q) use ($search){
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+        })->orWhereHas('van', function($q) use ($search){
+            $q->where('name', 'like', "%{$search}%");
+        })->orWhere('start_date', 'like', "%{$search}%");
     }
 
-    // Show single booking - supports both full page and modal views
+    // Simple new bookings count (last 24 hours)
+    $newBookingsCount = Booking::where('created_at', '>=', now()->subDay())->count();
+
+    $bookings = $query->paginate(10);
+
+    return view('admin.bookings.index', compact('bookings', 'newBookingsCount'));
+}
+
     public function show($id)
     {
         $booking = Booking::with(['user','van'])->findOrFail($id);
@@ -143,6 +145,13 @@ class AdminBookingController extends Controller
                             ->with('error', 'PDF generation failed: ' . $e->getMessage());
         }
     }
+
+    public function markAsRead(Booking $booking)
+{
+    $booking->update(['is_viewed_by_admin' => true]);
+
+    return response()->json(['success' => true]);
+}
 
     // Generate invoice view for printing
     public function invoice($id)

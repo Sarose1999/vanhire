@@ -9,6 +9,10 @@ use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminBannerController;
 
+
+use Illuminate\Http\Request;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -53,16 +57,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/bookings/{id}', [BookingController::class, 'show'])->name('bookings.show');
     Route::get('/bookings/{id}/invoice', [BookingController::class, 'downloadInvoice'])->name('bookings.invoice');
 });
-
-// ---------------------------
-// Admin Routes
-// ---------------------------
-Route::middleware(['auth','is_admin'])->prefix('admin')->name('admin.')->group(function(){
+// Admin routes
+Route::middleware(['auth','is_admin'])->prefix('admin')->name('admin.')->group(function() {
 
     // Admin Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     // Vans Management
+
     Route::resource('vans', AdminVanController::class);
 
     // Bookings Management - Full resource with additional routes
@@ -75,6 +77,19 @@ Route::middleware(['auth','is_admin'])->prefix('admin')->name('admin.')->group(f
     // Admin Invoice & Download Routes
     Route::get('/bookings/{id}/invoice', [AdminBookingController::class, 'invoice'])->name('bookings.invoice');
     Route::get('/bookings/{id}/download', [AdminBookingController::class, 'download'])->name('bookings.download');
+
+    // Notification mark as read route
+    Route::post('/notifications/read/{id}', function ($id) {
+        $notification = auth()->user()->notifications()->find($id);
+        if ($notification) {
+            $notification->markAsRead();
+        }
+        return back();
+    })->name('notifications.read');
+
+    // Optional: Booking-specific notification mark as read
+    Route::post('/bookings/{booking}/mark-read', [BookingController::class, 'markAsRead'])
+        ->name('bookings.mark-read');
 
     // Banner Management
     Route::resource('banners', AdminBannerController::class);

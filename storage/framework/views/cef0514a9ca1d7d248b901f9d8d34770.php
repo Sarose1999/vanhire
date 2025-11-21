@@ -1,643 +1,614 @@
-<?php if (isset($component)) { $__componentOriginal91fdd17964e43374ae18c674f95cdaa3 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal91fdd17964e43374ae18c674f95cdaa3 = $attributes; } ?>
-<?php $component = App\View\Components\AdminLayout::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('admin-layout'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\App\View\Components\AdminLayout::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes([]); ?>
-    <div class="container mx-auto mt-6">
-        <h1 class="text-3xl font-bold mb-6">Manage Bookings</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --danger: #f94144;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --border-radius: 12px;
+            --box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
 
-        <!-- Search + Export -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <form method="GET" class="flex gap-2">
-                <input type="text" name="search" value="<?php echo e(request('search')); ?>" placeholder="Search bookings..." class="border px-3 py-2 rounded w-full md:w-64">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Search</button>
-            </form>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-            <a href="<?php echo e(route('admin.bookings.export', ['search' => request('search')])); ?>"
-               class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition whitespace-nowrap">
-                Export Excel
-            </a>
+        .bookings-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .booking-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 4px solid var(--primary);
+        }
+
+        .booking-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .booking-header {
+            background: linear-gradient(135deg, #f8f9ff 0%, #eef1ff 100%);
+            padding: 1.25rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .booking-body {
+            padding: 1.5rem;
+        }
+
+        .booking-footer {
+            background: #f8f9fa;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .van-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .booking-id {
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
+
+        .info-item {
+            display: flex;
+            margin-bottom: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .info-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(67, 97, 238, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .info-content {
+            flex: 1;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 0.1rem;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .price-tag {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            display: inline-block;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .badge-pending {
+            background: rgba(248, 150, 30, 0.15);
+            color: var(--warning);
+        }
+
+        .badge-approved {
+            background: rgba(76, 201, 240, 0.15);
+            color: var(--success);
+        }
+
+        .badge-completed {
+            background: rgba(67, 97, 238, 0.15);
+            color: var(--primary);
+        }
+
+        .badge-cancelled {
+            background: rgba(108, 117, 125, 0.15);
+            color: #6c757d;
+        }
+
+        .btn-action {
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-view {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-view:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-cancel {
+            background: rgba(249, 65, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(249, 65, 68, 0.2);
+        }
+
+        .btn-cancel:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(249, 65, 68, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-tabs {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 30px;
+            padding: 0.5rem 1.5rem;
+            margin-right: 0.5rem;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-pills .nav-link:hover {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .booking-count {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 0.5rem;
+        }
+
+        .no-bookings-message {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            display: none;
+        }
+
+        /* Notification Section */
+        .notifications-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .notification-card {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-message {
+            font-weight: 600;
+            color: #856404;
+        }
+
+        .notification-form button {
+            background: none;
+            border: none;
+            color: #0d6efd;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .booking-card {
+                margin-bottom: 1rem;
+            }
+
+            .info-item {
+                flex-direction: column;
+            }
+
+            .info-icon {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4 bookings-container">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="<?php echo e(route('home')); ?>" class="btn btn-outline-secondary btn-sm mb-2">
+                        <i class="fas fa-arrow-left me-1"></i>Back
+                    </a>
+                    <h1 class="h3 mb-1">My Bookings</h1>
+                    <p class="text-muted mb-0">Manage and track your van rentals</p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-light text-dark fs-6" id="total-bookings-count"><?php echo e($bookings->count()); ?> booking(s)</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Bookings Table -->
+        <!-- Admin Notifications -->
+        <?php
+            $notifications = auth()->user()->unreadNotifications;
+        ?>
+
+        <?php if($notifications->count() > 0): ?>
+        <div class="notifications-container">
+            <?php $__currentLoopData = $notifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $note): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <div class="notification-card">
+                <div class="notification-message">
+                    <?php echo e($note->data['message']); ?> (Booking #<?php echo e($note->data['booking_id']); ?>)
+                </div>
+             <form method="POST" action="<?php echo e(route('admin.notifications.read', $note->id)); ?>">
+                    <?php echo csrf_field(); ?>
+                    <button type="submit">Mark as Read</button>
+                </form>
+            </div>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </div>
+        <?php endif; ?>
+
+        <!-- Success/Error Messages -->
+        <?php if(session('success')): ?>
+            <div class="alert alert-success d-flex align-items-center" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <div><?php echo e(session('success')); ?></div>
+            </div>
+        <?php endif; ?>
+
+        <?php if(session('error')): ?>
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <div><?php echo e(session('error')); ?></div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+            <ul class="nav nav-pills" id="bookingFilterTabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-status="all">All Bookings</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-status="pending">Pending</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-status="approved">Approved</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-status="completed">Completed</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-status="cancelled">Cancelled</a>
+                </li>
+            </ul>
+            <div class="booking-count" id="filtered-count">
+                Showing all <?php echo e($bookings->count()); ?> bookings
+            </div>
+        </div>
+
         <?php if($bookings->count() > 0): ?>
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white shadow rounded-lg overflow-hidden">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th class="py-2 px-4 text-left">Van Image</th>
-                        <th class="py-2 px-4 text-left">Van</th>
-                        <th class="py-2 px-4 text-left">User</th>
-                        <th class="py-2 px-4 text-left">Pick-up Location</th>
-                        <th class="py-2 px-4 text-left">Drop-off Location</th>
-                        <th class="py-2 px-4 text-left">Start</th>
-                        <th class="py-2 px-4 text-left">Return</th>
-                        <th class="py-2 px-4 text-left">Days</th>
-                        <th class="py-2 px-4 text-left">Price ($)</th>
-                        <th class="py-2 px-4 text-left">Time</th>
-                        <th class="py-2 px-4 text-left">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <tr class="border-b hover:bg-gray-100" data-booking-id="<?php echo e($booking->id); ?>">
-                        <!-- Van Image -->
-                        <td class="py-2 px-4">
-                            <?php
-                                // Normalize image(s) and verify existence on the public disk
-                                $images = $booking->van->images ?? null;
-                                if (is_string($images)) {
-                                    $decoded = json_decode($images, true);
-                                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                        $images = $decoded;
-                                    } else {
-                                        $images = array_filter(array_map('trim', explode(',', $images)));
-                                    }
-                                }
-
-                                $firstImage = null;
-
-                                // Try singular image field first
-                                if (!empty($booking->van->image)) {
-                                    $candidate = ltrim($booking->van->image, '/');
-                                    $candidate = strpos($candidate, 'vans/') === 0 ? $candidate : 'vans/' . $candidate;
-                                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($candidate)) {
-                                        $firstImage = $candidate;
-                                    }
-                                }
-
-                                // Fallback to images array
-                                if (!$firstImage && is_array($images) && count($images) > 0) {
-                                    foreach ($images as $img) {
-                                        $candidate = ltrim($img, '/');
-                                        $candidate = strpos($candidate, 'vans/') === 0 ? $candidate : 'vans/' . $candidate;
-                                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($candidate)) {
-                                            $firstImage = $candidate;
-                                            break;
-                                        }
-                                    }
-                                }
-                            ?>
-
-                            <?php if($firstImage): ?>
-                                <img src="<?php echo e(asset('storage/' . $firstImage)); ?>"
-                                     alt="<?php echo e($booking->van->name); ?>"
-                                     class="w-20 h-14 object-contain rounded-lg shadow-sm">
-                            <?php else: ?>
-                                <div class="w-20 h-14 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    <span class="text-gray-500 text-xs">No Image</span>
-                                </div>
-                            <?php endif; ?>
-                        </td>
-                        <td class="py-2 px-4"><?php echo e($booking->van->name); ?></td>
-                        <td class="py-2 px-4"><?php echo e($booking->user->name); ?></td>
-                        <td class="py-2 px-4"><?php echo e($booking->pickup_location ?? 'N/A'); ?></td>
-                        <td class="py-2 px-4"><?php echo e($booking->dropoff_location ?? 'N/A'); ?></td>
-                        <td class="py-2 px-4"><?php echo e(\Carbon\Carbon::parse($booking->start_date)->format('Y-m-d')); ?></td>
-                        <td class="py-2 px-4"><?php echo e(\Carbon\Carbon::parse($booking->end_date)->format('Y-m-d')); ?></td>
-                        <!-- Use total_days directly from DB -->
-                        <td class="py-2 px-4"><?php echo e($booking->total_days); ?></td>
-                        <td class="py-2 px-4"><?php echo e(number_format($booking->total_price,2)); ?></td>
-                        <td class="py-2 px-4"><?php echo e($booking->created_at->format('Y-m-d H:i')); ?></td>
-                        <td class="py-2 px-4 status-cell" data-booking-id="<?php echo e($booking->id); ?>">
-                            <?php if($booking->status == 'pending'): ?>
-                                <span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">Pending</span>
-                            <?php elseif($booking->status == 'approved'): ?>
-                                <span class="bg-green-200 text-green-800 px-2 py-1 rounded text-sm">Approved</span>
-                            <?php elseif($booking->status == 'completed'): ?>
-                                <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm">Completed</span>
-                            <?php elseif($booking->status == 'cancelled'): ?>
-                                <span class="bg-red-200 text-red-800 px-2 py-1 rounded text-sm">Cancelled</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <!-- Action Buttons Row - Below each booking -->
-                    <tr class="border-b bg-gray-50" data-booking-id="<?php echo e($booking->id); ?>">
-                        <td colspan="11" class="py-3 px-4">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <!-- View Button -->
-                                <button type="button"
-                                        data-booking-id="<?php echo e($booking->id); ?>"
-                                        class="view-booking-btn flex items-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 py-1 rounded-full shadow transition text-sm">
-                                    <i class="fas fa-eye"></i> View Details
-                                </button>
-
-                                <!-- Status Update Buttons -->
-                                <button type="button"
-                                        data-action-url="<?php echo e(route('admin.bookings.updateStatus', $booking->id)); ?>"
-                                        data-status="approved"
-                                        class="ajax-status-btn flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-600 px-3 py-1 rounded-full shadow transition text-sm">
-                                    <i class="fas fa-check-circle"></i> Approve
-                                </button>
-
-                                <button type="button"
-                                        data-action-url="<?php echo e(route('admin.bookings.updateStatus', $booking->id)); ?>"
-                                        data-status="completed"
-                                        class="ajax-status-btn flex items-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-600 px-3 py-1 rounded-full shadow transition text-sm">
-                                    <i class="fas fa-clipboard-check"></i> Complete
-                                </button>
-
-                                <button type="button"
-                                        data-action-url="<?php echo e(route('admin.bookings.updateStatus', $booking->id)); ?>"
-                                        data-status="pending"
-                                        class="ajax-status-btn flex items-center gap-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-600 px-3 py-1 rounded-full shadow transition text-sm">
-                                    <i class="fas fa-clock"></i> Set Pending
-                                </button>
-
-                                <button type="button"
-                                        data-action-url="<?php echo e(route('admin.bookings.updateStatus', $booking->id)); ?>"
-                                        data-status="cancelled"
-                                        class="ajax-status-btn flex items-center gap-1 bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1 rounded-full shadow transition text-sm">
-                                    <i class="fas fa-times-circle"></i> Cancel
-                                </button>
-
-                                <!-- Delete Button -->
-                                <button type="button"
-                                        data-action-url="<?php echo e(route('admin.bookings.destroy', $booking->id)); ?>"
-                                        class="ajax-delete-btn flex items-center gap-1 bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1 rounded-full shadow transition text-sm">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
+            <div class="bookings-list" id="bookingsList">
+                <?php $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div class="booking-card" data-status="<?php echo e($booking->status); ?>">
+                    <!-- Booking Header -->
+                    <div class="booking-header">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="van-name"><?php echo e($booking->van->name); ?></div>
+                                <div class="booking-id">Booking #<?php echo e($booking->id); ?></div>
                             </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                </tbody>
-            </table>
-        </div>
+                            <div class="d-flex align-items-center">
+                                <div class="status-badge <?php echo e('badge-' . $booking->status); ?> me-3">
+                                    <?php if($booking->status == 'pending'): ?>
+                                        <i class="bi bi-hourglass-split me-1"></i> Pending
+                                    <?php elseif($booking->status == 'approved'): ?>
+                                        <i class="bi bi-check-circle me-1"></i> Approved
+                                    <?php elseif($booking->status == 'completed'): ?>
+                                        <i class="bi bi-flag me-1"></i> Completed
+                                    <?php elseif($booking->status == 'cancelled'): ?>
+                                        <i class="bi bi-x-circle me-1"></i> Cancelled
+                                    <?php else: ?>
+                                        Unknown
+                                    <?php endif; ?>
+                                </div>
+                                <div class="price-tag">Rs. <?php echo e(number_format($booking->total_price, 2)); ?></div>
+                            </div>
+                        </div>
+                    </div>
 
-        <!-- Pagination -->
-        <div class="mt-4">
-            <?php echo e($bookings->withQueryString()->links()); ?>
+                    <!-- Booking Body -->
+                    <div class="booking-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <div class="info-label">Pick-up Location</div>
+                                        <div class="info-value"><?php echo e($booking->pickup_location ?? 'N/A'); ?></div>
+                                    </div>
+                                </div>
 
-        </div>
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="fas fa-flag-checkered"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <div class="info-label">Drop-off Location</div>
+                                        <div class="info-value"><?php echo e($booking->dropoff_location ?? 'N/A'); ?></div>
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="far fa-calendar-alt"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <div class="info-label">Rental Period</div>
+                                        <div class="info-value">
+                                            <?php echo e(\Carbon\Carbon::parse($booking->start_date)->format('d M Y')); ?> -
+                                            <?php echo e(\Carbon\Carbon::parse($booking->end_date)->format('d M Y')); ?>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="far fa-clock"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <div class="info-label">Pick-up Time</div>
+                                        <div class="info-value"><?php echo e(\Carbon\Carbon::parse($booking->time)->format('H:i')); ?></div>
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="fas fa-calendar-day"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <div class="info-label">Total Days</div>
+                                        <div class="info-value"><?php echo e($booking->total_days); ?> day(s)</div>
+                                    </div>
+                                </div>
+
+                                <div class="info-item">
+                                    <div class="info-icon">
+                                        <i class="far fa-calendar-check"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <div class="info-label">Booking Date</div>
+                                        <div class="info-value"><?php echo e(\Carbon\Carbon::parse($booking->created_at)->format('d M Y, H:i')); ?></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking Footer -->
+                    <div class="booking-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <?php if($booking->status == 'pending'): ?>
+                                    <span class="text-warning">
+                                        <i class="fas fa-info-circle me-1"></i> Waiting for approval
+                                    </span>
+                                <?php elseif($booking->status == 'approved'): ?>
+                                    <span class="text-success">
+                                        <i class="fas fa-check me-1"></i> Ready for pickup
+                                    </span>
+                                <?php elseif($booking->status == 'completed'): ?>
+                                    <span class="text-primary">
+                                        <i class="fas fa-flag me-1"></i> Trip completed
+                                    </span>
+                                <?php elseif($booking->status == 'cancelled'): ?>
+                                    <span class="text-muted">
+                                        <i class="fas fa-ban me-1"></i> Booking cancelled
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="d-flex">
+                                <a href="<?php echo e(route('bookings.show', $booking->id)); ?>" class="btn btn-action btn-view me-2">
+                                    <i class="bi bi-eye me-1"></i> View Details
+                                </a>
+
+                                <?php if($booking->status == 'pending'): ?>
+                                    <form action="<?php echo e(route('bookings.cancel', $booking->id)); ?>" method="POST" onsubmit="return confirm('Are you sure to cancel this booking?');">
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('DELETE'); ?>
+                                        <button type="submit" class="btn btn-action btn-cancel">
+                                            <i class="bi bi-x-circle me-1"></i> Cancel
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </div>
+
+            <!-- No bookings message for filtered state -->
+            <div class="no-bookings-message" id="noBookingsMessage">
+                <div class="empty-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 class="h4 mb-3">No Bookings Found</h3>
+                <p class="text-muted mb-4">There are no bookings with the selected status.</p>
+                <button class="btn btn-primary" id="resetFilter">
+                    <i class="fas fa-redo me-2"></i> Show All Bookings
+                </button>
+            </div>
         <?php else: ?>
-            <p class="text-center text-gray-500 mt-8">No bookings found.</p>
+            <!-- Empty State -->
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+                <h3 class="h4 mb-3">No Bookings Yet</h3>
+                <p class="text-muted mb-4">You haven't made any van bookings yet. Start exploring our available vans!</p>
+                <a href="<?php echo e(route('vans.index')); ?>" class="btn btn-primary btn-lg">
+                    <i class="fas fa-van-shuttle me-2"></i> Browse Vans
+                </a>
+            </div>
         <?php endif; ?>
     </div>
 
-    <!-- Booking Details Modal -->
-    <div id="booking-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden transform transition-all duration-300 modal-enter">
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
-                <h3 class="text-2xl font-bold text-gray-900">Booking Details</h3>
-                <button type="button" id="close-modal" class="text-gray-400 hover:text-gray-600 transition p-2 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterTabs = document.querySelectorAll('#bookingFilterTabs .nav-link');
+            const bookingCards = document.querySelectorAll('.booking-card');
+            const bookingsList = document.getElementById('bookingsList');
+            const noBookingsMessage = document.getElementById('noBookingsMessage');
+            const filteredCount = document.getElementById('filtered-count');
+            const resetFilterBtn = document.getElementById('resetFilter');
+            const totalBookingsCount = document.getElementById('total-bookings-count');
 
-            <!-- Modal Content -->
-            <div class="overflow-y-auto max-h-[calc(95vh-120px)]">
-                <div id="modal-loading" class="flex justify-center items-center py-12">
-                    <div class="text-center">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p class="text-gray-600">Loading booking details...</p>
-                    </div>
-                </div>
+            // Store the original total count
+            const totalBookings = bookingCards.length;
 
-                <div id="modal-content" class="hidden">
-                    <!-- Content will be loaded here via AJAX -->
-                </div>
+            // Function to filter bookings by status
+            function filterBookings(status) {
+                let visibleCount = 0;
 
-                <div id="modal-error" class="hidden text-center py-12">
-                    <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-2">Failed to Load Details</h4>
-                    <p class="text-gray-600">Unable to load booking details. Please try again.</p>
-                </div>
-            </div>
-        </div>
-    </div>
- <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal91fdd17964e43374ae18c674f95cdaa3)): ?>
-<?php $attributes = $__attributesOriginal91fdd17964e43374ae18c674f95cdaa3; ?>
-<?php unset($__attributesOriginal91fdd17964e43374ae18c674f95cdaa3); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal91fdd17964e43374ae18c674f95cdaa3)): ?>
-<?php $component = $__componentOriginal91fdd17964e43374ae18c674f95cdaa3; ?>
-<?php unset($__componentOriginal91fdd17964e43374ae18c674f95cdaa3); ?>
-<?php endif; ?>
-
-<style>
-    /* Pulsing green outline for action success (1.5s) */
-    .action-success {
-        position: relative;
-        animation: actionPulse 1.5s ease-in-out forwards;
-        box-shadow: 0 0 0 0 rgba(16,185,129,0.0);
-    }
-
-    @keyframes actionPulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(16,185,129,0.0), 0 0 0 0 rgba(16,185,129,0.0) inset;
-        }
-        20% {
-            box-shadow: 0 0 0 6px rgba(16,185,129,0.12), 0 0 0 0 rgba(16,185,129,0.0) inset;
-        }
-        60% {
-            box-shadow: 0 0 0 10px rgba(16,185,129,0.08), 0 0 0 0 rgba(16,185,129,0.0) inset;
-        }
-        100% {
-            box-shadow: 0 0 0 18px rgba(16,185,129,0.02), 0 0 0 0 rgba(16,185,129,0.0) inset;
-        }
-    }
-
-    /* Toast styling */
-    .ajax-toast-container {
-        position: fixed;
-        right: 1rem;
-        top: 1rem;
-        z-index: 9999;
-        display:flex;
-        flex-direction:column;
-        gap:0.5rem;
-    }
-    .ajax-toast {
-        background: #111827;
-        color: white;
-        padding: 0.6rem 0.9rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-        font-size: 0.95rem;
-        opacity: 0;
-        transform: translateY(-6px);
-        transition: all 260ms ease;
-    }
-    .ajax-toast.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    .ajax-toast.success {
-        background: linear-gradient(90deg, #10b981, #059669);
-    }
-    .ajax-toast.error {
-        background: linear-gradient(90deg, #ef4444, #f97316);
-    }
-
-    /* Loading state for buttons */
-    .btn-loading {
-        position: relative;
-        pointer-events: none;
-        color: transparent !important;
-    }
-    .btn-loading::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 16px;
-        height: 16px;
-        margin: -8px 0 0 -8px;
-        border: 2px solid currentColor;
-        border-radius: 50%;
-        border-right-color: transparent;
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-
-    /* Modal animations */
-    .modal-enter {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    .modal-enter-active {
-        opacity: 1;
-        transform: scale(1);
-        transition: opacity 200ms ease-out, transform 200ms ease-out;
-    }
-
-    /* Clean modal styles */
-    .modal-content {
-        background: white;
-    }
-</style>
-
-<script>
-    // Simple toast utility
-    function showToast(message, type = 'success', timeout = 3000) {
-        let container = document.querySelector('.ajax-toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.className = 'ajax-toast-container';
-            document.body.appendChild(container);
-        }
-
-        const toast = document.createElement('div');
-        toast.className = 'ajax-toast ' + (type === 'error' ? 'error' : 'success');
-        toast.textContent = message;
-        container.appendChild(toast);
-
-        // show
-        requestAnimationFrame(() => toast.classList.add('show'));
-
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, timeout);
-    }
-
-    // Status badges mapping
-    const statusBadges = {
-        pending: '<span class="bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-sm">Pending</span>',
-        approved: '<span class="bg-green-200 text-green-800 px-2 py-1 rounded text-sm">Approved</span>',
-        completed: '<span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm">Completed</span>',
-        cancelled: '<span class="bg-red-200 text-red-800 px-2 py-1 rounded text-sm">Cancelled</span>'
-    };
-
-    // Modal functionality
-    const modal = document.getElementById('booking-modal');
-    const closeModalBtn = document.getElementById('close-modal');
-    const modalLoading = document.getElementById('modal-loading');
-    const modalContent = document.getElementById('modal-content');
-    const modalError = document.getElementById('modal-error');
-
-    function openModal() {
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        // Trigger animation
-        setTimeout(() => {
-            modal.querySelector('.modal-enter').classList.add('modal-enter-active');
-        }, 10);
-    }
-
-    function closeModal() {
-        modal.querySelector('.modal-enter').classList.remove('modal-enter-active');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-            modalContent.classList.add('hidden');
-            modalError.classList.add('hidden');
-            modalLoading.classList.remove('hidden');
-            modalContent.innerHTML = '';
-        }, 200);
-    }
-
-    // Close modal events
-    closeModalBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-
-    // Handle view booking details
-    document.addEventListener('click', function(e) {
-        // View booking buttons
-        if (e.target.classList.contains('view-booking-btn')) {
-            const button = e.target;
-            const bookingId = button.getAttribute('data-booking-id');
-            loadBookingDetails(bookingId);
-        }
-
-        // Status update buttons
-        if (e.target.classList.contains('ajax-status-btn')) {
-            const button = e.target;
-            const actionUrl = button.getAttribute('data-action-url');
-            const status = button.getAttribute('data-status');
-            const bookingId = button.closest('tr').getAttribute('data-booking-id');
-
-            // Show confirmation for certain status changes
-            if (status === 'cancelled') {
-                if (!confirm('Are you sure you want to cancel this booking?')) {
-                    return;
-                }
-            }
-
-            updateBookingStatus(button, actionUrl, status, bookingId);
-        }
-
-        // Delete buttons
-        if (e.target.classList.contains('ajax-delete-btn')) {
-            const button = e.target;
-            const actionUrl = button.getAttribute('data-action-url');
-            const bookingId = button.closest('tr').getAttribute('data-booking-id');
-
-            if (confirm('Are you sure you want to delete this booking?')) {
-                deleteBooking(button, actionUrl, bookingId);
-            }
-        }
-    });
-
-    function loadBookingDetails(bookingId) {
-        openModal();
-
-        // Show loading state
-        modalLoading.classList.remove('hidden');
-        modalContent.classList.add('hidden');
-        modalError.classList.add('hidden');
-
-        // Fetch booking details - request modal version
-        fetch(`/admin/bookings/${bookingId}?modal=true`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'text/html'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load booking details');
-            }
-            return response.text();
-        })
-        .then(html => {
-            modalLoading.classList.add('hidden');
-            modalContent.innerHTML = html;
-            modalContent.classList.remove('hidden');
-
-            // Attach event listeners to modal forms
-            attachModalFormListeners();
-        })
-        .catch(error => {
-            console.error('Error loading booking details:', error);
-            modalLoading.classList.add('hidden');
-            modalError.classList.remove('hidden');
-        });
-    }
-
-    function attachModalFormListeners() {
-        // Handle form submissions within the modal
-        const modalForms = modalContent.querySelectorAll('form');
-        modalForms.forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                const formData = new FormData(this);
-                const action = this.getAttribute('action');
-                const method = this.querySelector('input[name="_method"]')?.value || 'POST';
-
-                // For delete forms, show confirmation
-                if (method === 'DELETE') {
-                    if (!confirm('Are you sure you want to delete this booking?')) {
-                        return;
-                    }
-                }
-
-                fetch(action, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
-                    },
-                    body: formData
-                })
-                .then(response => {
-                    if (response.ok) {
-                        if (method === 'DELETE') {
-                            showToast('Booking deleted successfully!', 'success');
-                            closeModal();
-                            // Remove the booking from the table
-                            const rows = document.querySelectorAll(`tr[data-booking-id="${this.closest('[data-booking-id]')?.getAttribute('data-booking-id')}"]`);
-                            rows.forEach(row => row.remove());
-                        } else {
-                            showToast('Booking updated successfully!', 'success');
-                            // Reload the modal content to reflect changes
-                            const bookingId = this.closest('[data-booking-id]')?.getAttribute('data-booking-id');
-                            if (bookingId) {
-                                loadBookingDetails(bookingId);
-                            }
-                        }
+                bookingCards.forEach(card => {
+                    if (status === 'all' || card.getAttribute('data-status') === status) {
+                        card.style.display = 'block';
+                        visibleCount++;
                     } else {
-                        throw new Error('Action failed');
+                        card.style.display = 'none';
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('Action failed. Please try again.', 'error');
+                });
+
+                // Update the count display
+                if (status === 'all') {
+                    filteredCount.textContent = `Showing all ${totalBookings} bookings`;
+                } else {
+                    filteredCount.textContent = `Showing ${visibleCount} ${status} booking(s)`;
+                }
+
+                // Show/hide the no bookings message
+                if (visibleCount === 0 && totalBookings > 0) {
+                    bookingsList.style.display = 'none';
+                    noBookingsMessage.style.display = 'block';
+                } else {
+                    bookingsList.style.display = 'block';
+                    noBookingsMessage.style.display = 'none';
+                }
+            }
+
+            // Add click event listeners to filter tabs
+            filterTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    filterTabs.forEach(t => t.classList.remove('active'));
+
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+
+                    // Filter bookings
+                    const status = this.getAttribute('data-status');
+                    filterBookings(status);
                 });
             });
-        });
-    }
 
-    function updateBookingStatus(button, actionUrl, status, bookingId) {
-        // Add loading state
-        const originalHTML = button.innerHTML;
-        button.classList.add('btn-loading');
-        button.disabled = true;
-
-        // Create form data
-        const formData = new FormData();
-        formData.append('_token', '<?php echo e(csrf_token()); ?>');
-        formData.append('_method', 'PATCH');
-        formData.append('status', status);
-
-        fetch(actionUrl, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
-            },
-            body: formData
-        })
-        .then(response => {
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return response.json();
-            } else {
-                // If not JSON, assume success for redirect responses
-                return { success: true, status: status };
-            }
-        })
-        .then(data => {
-            if (data.success || data.status) {
-                // Update status badge
-                const statusCell = document.querySelector(`.status-cell[data-booking-id="${bookingId}"]`);
-                if (statusCell && statusBadges[status]) {
-                    statusCell.innerHTML = statusBadges[status];
-                }
-
-                // Show success animation
-                const dataRow = document.querySelector(`tr[data-booking-id="${bookingId}"]`);
-                if (dataRow) {
-                    dataRow.classList.add('action-success');
-                    setTimeout(() => dataRow.classList.remove('action-success'), 1500);
-                }
-
-                showToast('Status updated successfully!', 'success');
-            } else {
-                throw new Error(data.message || 'Failed to update status');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast(error.message || 'Failed to update status. Please try again.', 'error');
-        })
-        .finally(() => {
-            // Restore button
-            button.classList.remove('btn-loading');
-            button.disabled = false;
-            button.innerHTML = originalHTML;
-        });
-    }
-
-    function deleteBooking(button, actionUrl, bookingId) {
-        // Add loading state
-        const originalHTML = button.innerHTML;
-        button.classList.add('btn-loading');
-        button.disabled = true;
-
-        // Create form data
-        const formData = new FormData();
-        formData.append('_token', '<?php echo e(csrf_token()); ?>');
-        formData.append('_method', 'DELETE');
-
-        fetch(actionUrl, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
-            },
-            body: formData
-        })
-        .then(response => {
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return response.json();
-            } else {
-                // If not JSON, assume success for redirect responses
-                return { success: true, deleted: true };
-            }
-        })
-        .then(data => {
-            if (data.success || data.deleted) {
-                // Remove booking rows
-                const rows = document.querySelectorAll(`tr[data-booking-id="${bookingId}"]`);
-                rows.forEach(row => {
-                    row.style.opacity = '0';
-                    row.style.transition = 'opacity 0.3s ease';
-                    setTimeout(() => row.remove(), 300);
+            // Reset filter button
+            if (resetFilterBtn) {
+                resetFilterBtn.addEventListener('click', function() {
+                    filterTabs.forEach(t => t.classList.remove('active'));
+                    filterTabs[0].classList.add('active');
+                    filterBookings('all');
                 });
-
-                showToast('Booking deleted successfully!', 'success');
-            } else {
-                throw new Error(data.message || 'Failed to delete booking');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast(error.message || 'Failed to delete booking. Please try again.', 'error');
-        })
-        .finally(() => {
-            // Restore button
-            button.classList.remove('btn-loading');
-            button.disabled = false;
-            button.innerHTML = originalHTML;
-        });
-    }
 
-    // Close modal with Escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-            closeModal();
-        }
-    });
-</script>
+            // Initialize with all bookings showing
+            filterBookings('all');
+        });
+    </script>
+</body>
+</html>
 <?php /**PATH C:\Users\trainee\Desktop\New folder\van hire last update\resources\views/admin/bookings/index.blade.php ENDPATH**/ ?>
