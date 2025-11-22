@@ -2,66 +2,70 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Booking;
-use App\Models\Van;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Booking;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Van;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Notification;
 
 class BookingController extends Controller
 {
-    /**
-     * Show all bookings for the logged-in user
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $bookings = Booking::where('user_id', Auth::id())
-            ->with('van')
-            ->latest()
-            ->get();
+        $query = Booking::with(['van', 'user']);
 
-        return view('bookings.index', compact('bookings'));
+        // Search functionality
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('van', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })
+                ->orWhereHas('user', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('pickup_location', 'like', "%{$search}%")
+                ->orWhere('dropoff_location', 'like', "%{$search}%")
+                ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
+
+        $bookings = $query->latest()->paginate(10);
+
+        // Admin notifications
+        $notifications = Auth::user()->unreadNotifications ?? collect();
+
+        return view('bookings.index', compact('bookings', 'notifications'));
     }
 
-    /**
-     * Show booking form for a specific van
-     */
     public function create(Van $van)
     {
         return view('bookings.create', compact('van'));
     }
 
-    /**
-     * Store a new booking
-     */
     public function store(Request $request, Van $van)
     {
-        // ✅ Validate form input
         $request->validate([
             'start_date' => 'required|date',
             'end_date'   => 'required|date|after_or_equal:start_date',
             'time'       => 'required',
             'pickup_location' => 'required|string|max:255',
-        'dropoff_location' => 'required|string|max:255',
+            'dropoff_location' => 'required|string|max:255',
         ]);
 
-    // ✅ Calculate total days (inclusive)
         $start = Carbon::parse($request->start_date);
         $end   = Carbon::parse($request->end_date);
 
-        // diffInDays with second param "false" → returns signed value
         $totalDays = $start->diffInDays($end, false) + 1;
-
-        // ✅ Prevent negative or zero-day values
         if ($totalDays < 1) {
             $totalDays = 1;
         }
 
-        // ✅ Calculate total price
         $totalPrice = $totalDays * $van->price_per_day;
 
-        // Check availability: disallow overlapping bookings for the same van
         $overlapExists = Booking::where('van_id', $van->id)
             ->where(function ($q) use ($start, $end) {
                 $q->whereBetween('start_date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
@@ -75,10 +79,9 @@ class BookingController extends Controller
             ->exists();
 
         if ($overlapExists) {
-            return back()->withInput()->with('error', 'Van not available for the selected dates. Please choose different dates.');
+            return back()->withInput()->with('error', 'Van not available for the selected dates.');
         }
 
-        // ✅ Create booking record
         Booking::create([
             'user_id'     => Auth::id(),
             'van_id'      => $van->id,
@@ -86,18 +89,15 @@ class BookingController extends Controller
             'end_date'    => $end->format('Y-m-d'),
             'time'        => $request->time,
             'pickup_location' => $request->pickup_location,
-        'dropoff_location' => $request->dropoff_location,
-            'total_days'  => $totalDays,        // ✅ Now correctly stored
+            'dropoff_location' => $request->dropoff_location,
+            'total_days'  => $totalDays,
             'total_price' => $totalPrice,
-            'status'      => 'pending',         // Default status
+            'status'      => 'pending',
         ]);
 
         return redirect()->route('bookings.index')->with('success', 'Booking successful!');
     }
 
-    /**
-     * Cancel a booking (only if pending)
-     */
     public function cancel($id)
     {
         $booking = Booking::where('id', $id)
@@ -114,9 +114,6 @@ class BookingController extends Controller
         return back()->with('success', 'Booking cancelled successfully.');
     }
 
-    /**
-     * Show a single booking (details page)
-     */
     public function show($id)
     {
         $booking = Booking::with('van')
@@ -126,34 +123,23 @@ class BookingController extends Controller
         return view('bookings.show', compact('booking'));
     }
 
-    /**
-     * Download booking invoice as PDF
-     */
     public function downloadInvoice($id)
     {
         $booking = Booking::with(['van', 'user'])->findOrFail($id);
-
-        // Use the admin invoice view for consistent styling when admins download
-        // If you prefer the public/user invoice layout, change the view name accordingly
         $pdf = Pdf::loadView('admin.bookings.invoice', compact('booking'));
         return $pdf->download('Booking-Invoice-' . $booking->id . '.pdf');
     }
+
     public function invoice(Booking $booking)
-{
-    // For PDF generation, you can use packages like barryvdh/laravel-dompdf
-    // For now, let's create a simple HTML invoice that can be printed
+    {
+        return view('admin.bookings.invoice', compact('booking'));
+    }
 
-    return view('admin.bookings.invoice', compact('booking'));
-}
-
-    /**
-     * AJAX: check availability for a van between start and end dates
-     */
     public function checkAvailability(Van $van, Request $request)
     {
         $request->validate([
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date'   => 'required|date|after_or_equal:start_date',
         ]);
 
         $start = Carbon::parse($request->start_date)->format('Y-m-d');
@@ -171,26 +157,17 @@ class BookingController extends Controller
             ->where('status', '!=', 'cancelled')
             ->exists();
 
-        if ($overlapExists) {
-            return response()->json([
-                'available' => false,
-                'message' => 'Van not available for selected dates.'
-            ]);
-        }
-
         return response()->json([
-            'available' => true,
-            'message' => 'Van is available for the selected dates.'
+            'available' => !$overlapExists,
+            'message' => $overlapExists
+                ? 'Van not available for selected dates.'
+                : 'Van is available for selected dates.'
         ]);
     }
 
     public function markAsRead(Booking $booking)
-{
-    $booking->update(['is_viewed_by_admin' => true]);
-
-    return response()->json(['success' => true]);
-}
-
-
-
+    {
+        $booking->update(['is_viewed_by_admin' => true]);
+        return response()->json(['success' => true]);
+    }
 }

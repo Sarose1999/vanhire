@@ -8,30 +8,39 @@ use Illuminate\Http\Request;
 use App\Exports\BookingsExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
+
+
+
 
 class AdminBookingController extends Controller
 {
-    // Show all bookings with search + pagination
     public function index(Request $request)
-{
-    $query = Booking::with(['user','van'])->orderBy('created_at','desc');
+    {
+        $query = Booking::with(['van', 'user']);
 
-    if ($request->filled('search')) {
-        $search = $request->search;
-        $query->whereHas('user', function($q) use ($search){
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%");
-        })->orWhereHas('van', function($q) use ($search){
-            $q->where('name', 'like', "%{$search}%");
-        })->orWhere('start_date', 'like', "%{$search}%");
-    }
+        // Your existing search and pagination logic
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('van', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })->orWhereHas('user', function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })->orWhere('pickup_location', 'like', "%{$search}%")
+                  ->orWhere('dropoff_location', 'like', "%{$search}%")
+                  ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
 
-    // Simple new bookings count (last 24 hours)
-    $newBookingsCount = Booking::where('created_at', '>=', now()->subDay())->count();
+        $bookings = $query->latest()->paginate(10);
 
-    $bookings = $query->paginate(10);
+        // Get notifications for authenticated admin user
+        $notifications = Auth::check() ? Auth::user()->unreadNotifications : collect();
 
-    return view('admin.bookings.index', compact('bookings', 'newBookingsCount'));
+        return view('admin.bookings.index', compact('bookings', 'notifications'));
+
+
 }
 
     public function show($id)

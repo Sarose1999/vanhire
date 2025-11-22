@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\AdminVanController;
 use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminBannerController;
+use Illuminate\Support\Facades\Auth;
+
 
 
 use Illuminate\Http\Request;
@@ -62,13 +64,23 @@ Route::middleware(['auth','is_admin'])->prefix('admin')->name('admin.')->group(f
 
     // Admin Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    // In routes/web.php or routes/admin.php
+Route::get('/admin/bookings', [AdminBookingController::class, 'index'])->name('admin.bookings.index');
+
+  // Mark ALL notifications as read
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\Admin\NotificationController::class, 'markAllRead'])
+         ->name('notifications.markAllRead');
+
+    // Mark ONE notification as read
+    Route::post('/notifications/read/{id}', [App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])
+         ->name('notifications.read');
 
     // Vans Management
 
     Route::resource('vans', AdminVanController::class);
 
     // Bookings Management - Full resource with additional routes
-    Route::resource('bookings', AdminBookingController::class)->except(['create', 'edit', 'update', 'store']);
+    Route::resource('/bookings', AdminBookingController::class)->except(['create', 'edit', 'update', 'store']);
 
     // Additional Booking Routes for Admin
     Route::get('/bookings/export', [AdminBookingController::class, 'export'])->name('bookings.export');
