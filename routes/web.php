@@ -81,6 +81,9 @@ Route::get('/admin/bookings', [AdminBookingController::class, 'index'])->name('a
 
     // Bookings Management - Full resource with additional routes
     Route::resource('/bookings', AdminBookingController::class)->except(['create', 'edit', 'update', 'store']);
+    Route::patch('/bookings/{id}/status', [AdminBookingController::class, 'updateStatus'])
+    ->name('admin.bookings.updateStatus');
+
 
     // Additional Booking Routes for Admin
     Route::get('/bookings/export', [AdminBookingController::class, 'export'])->name('bookings.export');
